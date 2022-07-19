@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    	<title>Stopwatch Timer</title>
+    	<style>
+    		#control-panel {
+    			text-align: center;
+    		}
+
+    		#timer-panel {
+    			height:400px;
+    			text-align:center;
+    			padding: 30px;
+    		}
+
+    		h3 {
+    			display: inline-block;
+    			margin: 10px;
+    		}
+
+    		#start-button {
+    			color: green;
+    		}
+
+    		#stop-button {
+    			color: red;
+    		}
+    		button {
+    			padding: 10px 20px;
+    			margin: 10px;
+    		}
+
+    		#clock {
+    			border: 1px solid black;
+    			padding: 10px 20px;
+    			display: inline-block;
+    		}
+    		
+    	</style>
+    </head>
+    <body>
+    	
+    	<div id="control-panel">
+    		<h3>Background Color</h2>
+    		<input id="background-color-select" type="color" onChange="changeBackgroundColor(this.value)" />
+    		<br />
+    		<h3>Text Color</h2>
+    		<input id="text-color-select" type="color" onChange="changeTextColor(this.value)" />
+    		<br />
+    		<h3>Set Time (ms)</h2>
+    		<input id="time-set" type="number" onChange="changeSetTime(this.value)" />
+    		<br />
+    		<h3 id="stop-set-label">Pause After (ms)</h2>
+    		<input id="stop-set" type="number" onChange="changeStopTime(this.value)" />
+    		<br />
+    		<h3>Count Mode</h3>
+    		<input id="timer-radio" type="radio" name="timer-mode" value="timer" onChange="changeTimerMode(this.value)">Timer</input>
+    		<input id="stopwatch-radio" type="radio" name="timer-mode" value="stopwatch" onChange="changeTimerMode(this.value)">Stopwatch</input>
+    		<br />
+    		<h3>Precision</h3>
+    		<input id="precision-1-radio" type="radio" name="precision" value="1" onChange="changePrecision(this.value)">1</input>
+    		<input id="precision-2-radio" type="radio" name="precision" value="2" onChange="changePrecision(this.value)">2</input>
+    		<input id="precision-3-radio" type="radio" name="precision" value="3" onChange="changePrecision(this.value)">3</input>
+    		<br />
+    		<br />
+    		<button id="start-button" onClick="start()">Start</button>
+    		<button id="stop-button" onClick="stop()">Stop</button>
+    		<br />
+    	</div>
+    	<div id="timer-panel">
+    		<h1 id="clock"></h1>
+    	</div>
+    	<script type="text/javascript">
+    		var mode = "timer"
+    		var time = 5000;
+    		var stopTime = 0;
+    		var counter = 0;
+    		var intervalId;
+    		var binary = false;
+    		var timeoutIds = [];
+    		var precision = 3;
+
+    		initializeUI();
+
+    		function start() {
+    			console.log("start")
+    			document.getElementById("stop-button").disabled = false
+    			document.getElementById("start-button").disabled = true
+    			
+    			timeToStop = (mode == "timer" && stopTime != 0) ? stopTime : time
+    			for (var i=1; i<=timeToStop; i++) {
+    				timeoutIds.push(setTimeout(count, i, i))
+    			}
+    		}
+
+    		function changePrecision(value) {
+    			precision = value
+    			updateTimeDisplay()
+    		}
+
+    		function count(iteration) {
+    			console.log("Count" + iteration)
+    			counter = iteration
+    			updateTimeDisplay()
+   
+    			if (counter == time) {
+    				indicateFinished()
+    				console.log("Timer Finished")
+    				intervalId = setInterval(indicateFinished, 1000)
+    			}
+    		}
+
+    		function indicateFinished() {
+    			console.log("Indicate Finished")
+    			if (mode == "timer") {
+    				binary = !binary
+	    			var backgroundColor = document.getElementById("background-color-select").value
+	    			changeBackgroundColor(binary ? "red" : backgroundColor)	
+    			} else {
+    				changeBackgroundColor("green")	
+    			}
+    			
+
+    		}
+
+    		function stop() {
+    			console.log("stop")
+    			document.getElementById("start-button").disabled = false
+    			document.getElementById("stop-button").disabled = true
+    			clearInterval(intervalId)
+    			timeoutIds.forEach(id => clearInterval(id))
+    			counter = 0
+    			updateTimeDisplay()
+    			var backgroundColor = document.getElementById("background-color-select").value
+    			changeBackgroundColor(backgroundColor)
+    		}
+
+    		function changeSetTime(t) {
+    			time = t
+    			updateTimeDisplay();
+    		}
+
+    		function changeStopTime(t) {
+    			stopTime = t
+    			updateTimeDisplay();
+    		}
+
+    		function changeBackgroundColor(color) {
+    			document.getElementById("timer-panel").style.backgroundColor = color;
+    		}
+
+    		function changeTextColor(color) {
+    			document.getElementById("clock").style.color = color;
+    		}
+
+    		function changeTimerMode(newMode) {
+    			mode = newMode;
+    			updateTimeDisplay()
+    			var hideStopTime = newMode == "stopwatch"
+    			document.getElementById("stop-set").style.display = hideStopTime ? "none" : "inline-block"
+    			document.getElementById("stop-set-label").style.display = hideStopTime ? "none" : "inline-block"
+    		}
+
+    		function updateTimeDisplay() {
+    			var timeToDisplay
+    			switch(mode) {
+    				case "timer":
+    					console.log("Timer Set Display")
+	    				timeToDisplay = getTimeDisplay(time-counter)
+	    				break;
+    				case "stopwatch":
+    					console.log("Stopwatch Set Display")
+	    				timeToDisplay = getTimeDisplay(counter)
+	    				break;
+    			}
+
+    			document.getElementById("clock").innerHTML = timeToDisplay
+    		}
+
+    		function divisionForPrecision() {
+    			result = [100, 10, 1]
+    			return result[precision-1]
+    		}
+
+    		function getTimeDisplay(milliseconds) {
+    			var ms = (milliseconds % 1000);
+    			console.log("MS ", ms)
+    			var s = ((milliseconds -= ms)/1000)% 60;
+    			console.log("Seconds ", s)
+    			var m = (milliseconds -= (s * 1000))/60/1000 % 60;
+    			var hr = (milliseconds -= m * 60 * 1000)/60/60/1000;
+
+    			var result = "";
+    			if (hr > 0) {
+    				result = hr + ":";
+    			}
+    			result += padStart(m, 2) + ":";
+    			result += padStart(s, 2) + ".";
+    			result += padStart((Math.floor(ms/divisionForPrecision())), precision);
+    			return result;
+    		}
+
+    		function padStart(number, length) {
+    			return String(number).padStart(length, '0');
+    		}
+
+    		function initializeUI() {
+    			document.getElementById(mode+"-radio").checked = true;
+    			document.getElementById("precision-" + precision + "-radio").checked = true;
+    			document.getElementById("background-color-select").value="#ffffff"
+    			document.getElementById("text-color-select").value="#000000"
+    			document.getElementById("time-set").value=time
+    			document.getElementById("stop-set").value=0
+    			document.getElementById("stop-button").disabled = true
+    			updateTimeDisplay()
+
+    		}
+    		
+    	</script>
+    </body>	
+</html>	
